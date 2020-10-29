@@ -1,0 +1,206 @@
+
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+import java.util.Vector;
+import utils.AttrRef;
+import utils.DOpt;
+import utils.DomainConstraint;
+import utils.EmptyException;
+import utils.OptType;
+/**
+ * @overview SortedSet is likely to contain object such as customer who
+ * implements comparable,...
+ *
+ * @attributes elements SortedSet<Comparable> Vector
+ *
+ * @object A typical SortedSet object is a={x1,...,xn},where x1,...,xn are
+ * elements
+ *
+ * @abstract_properties mutable(elements)=true /\ optional(elements) =false
+ *
+ */
+public class SortedSet {
+
+    @DomainConstraint(type = "Vector<Comparable>", mutable = true, optional = false)
+    private Vector<Comparable> elements;
+
+    /**
+     * @effects constructor method initialize this as elements = new
+     * Vector<Comparable>();
+     *
+     */
+    @DOpt(type = OptType.Constructor)
+    public SortedSet(){
+        elements = new Vector<>();
+    }
+
+    /**
+     * @effects:<pre> if c is valid 
+     *              insert c 
+     *              sort by ascending direction
+     *              return true 
+     *           else 
+     *              return false<pre>
+     */
+    @DOpt(type = OptType.MutatorAdd)
+    @AttrRef("c")
+    public boolean insert(Comparable c) {
+        if (c != null && elements != null && !isIn(c)) {
+            elements.add(c);
+            Collections.sort(elements);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * @effects:<pre> if c is valid
+     *                  remove c 
+     *                  return true 
+     *                else 
+     *                  return false<pre>
+     */
+    @DOpt(type = OptType.MutatorRemove)
+    public boolean remove(Comparable c) {
+        if (c != null && repOk() && isIn(c)) {
+            elements.remove(c);
+            Collections.sort(elements);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * @effects return the size of elements
+     */
+    @DOpt(type = OptType.ObserverSize)
+    public int getSize() {
+        if (elements.isEmpty()) {
+            return 0;
+        } else {
+            return elements.size();
+        }
+    }
+
+    /**
+     * @effects <pre>  if this satisfy abstract properties
+     *              return true
+     *            else
+     *              return false <pre>
+     */
+    @DOpt(type = OptType.Helper)
+    public boolean repOk() {
+        if (elements.size() > 0 && elements != null) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * @effects <pre>if c is in elements
+     *                  return true 
+     *              else 
+     *                  return false<pre>
+     */
+    @DOpt(type = OptType.ObserverContains)
+    public boolean isIn(Comparable c) {
+        boolean result = false;
+        for (int i = 0; i < elements.size(); i++) {
+            if (c.compareTo(elements.get(i)) == 0) {
+                result = true;
+                break;
+            } else {
+                result = false;
+            }
+        }
+        return result;
+    }
+
+    /* 
+     * @return <pre>if elements is valid 
+     *                  return all object in elements <pre>
+     */
+    @Override
+    @DOpt(type = OptType.Default)
+    public String toString() {
+        StringBuilder str = new StringBuilder();
+        if (elements != null) {
+            str.append("-----------------------------------------\n");
+            for (int i = 0; i < elements.size(); i++) {
+                str.append(elements.get(i));
+
+                if (i < elements.size() - 1) {
+                    str.append(", ");
+                }
+                str.append("\n-----------------------------------------\n");
+            }
+        }
+        return str.toString();
+    }
+
+    /*
+    *@return new Generation()
+    */
+    @DOpt(type = OptType.ObserverIterator)
+    public Iterator<Comparable> Iterator() throws EmptyException {
+        if (elements.isEmpty()) {
+            throw new EmptyException("Elements is empty");
+        } else {
+            return new Generation();
+        }
+    }
+
+    /**
+     * @overview
+     *   SortedSet.Generation represents a generator of 
+     *   elements of an SortedSet.
+     * @attributes
+     *    count Integer int
+     * @abstract_properties
+     *  mutable(index)=false /\ min(count)=0 
+     *  
+     */
+    private class Generation implements Iterator<Comparable> {
+        @DomainConstraint(type="Integer",mutable=false,min=0)
+        private int count;
+        
+        //constructor to initialize count 
+        public Generation() {
+            count = 0;
+        }
+        
+        /**
+         * @effects <pre>
+         * 		if there are more object
+         * 			return true
+         * 		else
+         * 			return false
+         *    </pre>
+         */
+        @Override
+        public boolean hasNext() {
+            return (count < elements.size());
+        }
+
+        /**
+         * @effects <pre>
+         * 		if there are more object 
+         * 			returns the next object
+         * 			and modifies count
+         * 		else
+         * 			throw NoSuchElementException
+         * 		</pre>
+         */
+        @Override
+        public Comparable next() throws NoSuchElementException {
+            if (hasNext()) {
+                return elements.get(count++);
+            }
+            throw new NoSuchElementException();
+        }
+    }
+}
